@@ -49,4 +49,16 @@ public interface DocumentacaoArquivo {
     )
     @GetMapping("/ocorrencia-palavras")
     ResponseEntity<List<String>> listarOcorrenciaPalavras(@RequestParam Integer tamanho);
+
+    @Operation(summary = "Gerar gráfico com ocorrência de palavras",
+            description = "Gera gráfico com ocorrência de palavras, somente os primeiros x (tamnho) elementos")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(responseCode = "200", description = "Gráfico gerado com sucesso"),
+                    @ApiResponse(responseCode = "403", description = "Você não tem permissão para acessar este recurso"),
+                    @ApiResponse(responseCode = "500", description = "Foi gerada uma exceção")
+            }
+    )
+    @GetMapping("/ocorrencia-palavras/grafico")
+    ResponseEntity<?> gerarGraficoOcorrenciaPalavras(@RequestParam Integer tamanho);
 }

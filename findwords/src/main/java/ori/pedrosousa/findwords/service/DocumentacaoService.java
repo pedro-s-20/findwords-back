@@ -4,7 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.jsoup.Jsoup;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,12 +18,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ori.pedrosousa.findwords.config.exceptions.RegraDeNegocioException;
 import ori.pedrosousa.findwords.dto.DocumentacaoDTO;
+import ori.pedrosousa.findwords.dto.GraficoDTO;
 import ori.pedrosousa.findwords.dto.PageDTO;
 import ori.pedrosousa.findwords.entity.DocumentacaoEntity;
 import ori.pedrosousa.findwords.repository.DocumentacaoRepository;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -64,6 +73,39 @@ public class DocumentacaoService {
                 pagina,
                 tamanho,
                 documentacaoDTOList);
+    }
+
+    public GraficoDTO gerarGraficoOcorrenciaPalavras(Integer tamanho){
+        Map<String, Integer> todosElementos = retornarListaDeOcorrencias();
+
+        Map<String, Integer> palavrasEFreq = todosElementos.entrySet()
+                .stream()
+                .limit(tamanho)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        DefaultCategoryDataset barra = new DefaultCategoryDataset();
+        for (Map.Entry<String, Integer> item: palavrasEFreq.entrySet()) {
+            barra.setValue(item.getValue(), item.getKey(), "");
+        }
+
+        JFreeChart grafico = ChartFactory.createBarChart3D("Ocorrências de palavras no repositório",
+                "Palavras",
+                "Ocorrências",
+                barra,
+                PlotOrientation.VERTICAL,
+                true,
+                true,
+                false);
+        try {
+            ChartUtilities.saveChartAsJPEG(
+                    new File(System.getProperty("java.io.tmpdir")+"/grafico"), grafico, 1920, 1080);
+            var file = new File(System.getProperty("java.io.tmpdir")+"/grafico");
+            var path = Paths.get(file.getAbsolutePath());
+            return GraficoDTO.builder().imagem(new ByteArrayResource(Files.readAllBytes(path))).tamanho(file.length()).build();
+        } catch (IOException e) {
+            new RegraDeNegocioException("Erro ao salvar imagem em arquivo.");
+        }
+        return null;
     }
 
     public List<String> listarOcorrenciaPalavras(Integer tamanho){

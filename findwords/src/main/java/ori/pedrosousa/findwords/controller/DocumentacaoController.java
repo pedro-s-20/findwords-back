@@ -2,6 +2,7 @@ package ori.pedrosousa.findwords.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ori.pedrosousa.findwords.config.exceptions.RegraDeNegocioException;
 import ori.pedrosousa.findwords.controller.documentacao.DocumentacaoArquivo;
 import ori.pedrosousa.findwords.dto.DocumentacaoDTO;
+import ori.pedrosousa.findwords.dto.GraficoDTO;
 import ori.pedrosousa.findwords.dto.PageDTO;
 import ori.pedrosousa.findwords.service.DocumentacaoService;
 
@@ -35,5 +37,15 @@ public class DocumentacaoController implements DocumentacaoArquivo {
     @Override
     public ResponseEntity<List<String>> listarOcorrenciaPalavras(Integer tamanho) {
         return new ResponseEntity<>(documentacaoService.listarOcorrenciaPalavras(tamanho), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> gerarGraficoOcorrenciaPalavras(Integer tamanho) {
+        GraficoDTO graficoDTO = documentacaoService.gerarGraficoOcorrenciaPalavras(tamanho);
+        return ResponseEntity
+                .ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .contentLength(graficoDTO.getTamanho())
+                .body(graficoDTO.getImagem());
     }
 }
