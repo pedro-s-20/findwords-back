@@ -12,6 +12,8 @@ import ori.pedrosousa.findwords.dto.DocumentacaoDTO;
 import ori.pedrosousa.findwords.dto.PageDTO;
 import ori.pedrosousa.findwords.service.DocumentacaoService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/arquivo")
 @RequiredArgsConstructor
@@ -31,7 +33,7 @@ public class DocumentacaoController implements DocumentacaoArquivo {
     }
 
     @Override
-    public ResponseEntity<PageDTO<String>> listarOcorrenciaPalavras(Integer pagina, Integer tamanho) {
-        return new ResponseEntity<>(documentacaoService.listarOcorrenciaPalavras(pagina, tamanho), HttpStatus.OK);
+    public ResponseEntity<List<String>> listarOcorrenciaPalavras(Integer tamanho) {
+        return new ResponseEntity<>(documentacaoService.listarOcorrenciaPalavras(tamanho), HttpStatus.OK);
     }
 }

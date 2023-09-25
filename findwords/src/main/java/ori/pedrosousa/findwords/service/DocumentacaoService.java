@@ -16,8 +16,8 @@ import ori.pedrosousa.findwords.dto.PageDTO;
 import ori.pedrosousa.findwords.entity.DocumentacaoEntity;
 import ori.pedrosousa.findwords.repository.DocumentacaoRepository;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.io.IOException;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -66,7 +66,19 @@ public class DocumentacaoService {
                 documentacaoDTOList);
     }
 
-    public PageDTO<String> listarOcorrenciaPalavras(Integer pagina, Integer tamanho){
+    public List<String> listarOcorrenciaPalavras(Integer tamanho){
+
+        Map<String, Integer> palavrasEFreq = retornarListaDeOcorrencias();
+
+        List<String> palavrasEFrenquencias = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : palavrasEFreq.entrySet()) {
+            palavrasEFrenquencias.add(entry.getKey() + ": " + entry.getValue());
+        }
+
+        return palavrasEFrenquencias.subList(0, tamanho-1);
+    }
+
+    private Map<String, Integer> retornarListaDeOcorrencias(){
         StringBuilder acervoEmTexto = new StringBuilder();
         List<DocumentacaoEntity> itens = documentacaoRepository.findAll();
 
@@ -76,21 +88,10 @@ public class DocumentacaoService {
 
         Map<String, Integer> frequenciaPalavras = contarPalavras(acervoEmTexto.toString());
 
-        Map<String, Integer> frequenciaPalavrasOrdenada = ordenarPorFrequencia(frequenciaPalavras);
-
-        List<String> palavrasEFrenquencias = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : frequenciaPalavrasOrdenada.entrySet()) {
-            palavrasEFrenquencias.add(entry.getKey() + ": " + entry.getValue());
-        }
-
-        return new PageDTO<>((long) palavrasEFrenquencias.size(),
-                (palavrasEFrenquencias.size()/tamanho),
-                pagina,
-                tamanho,
-                palavrasEFrenquencias);
+        return ordenarPorFrequencia(frequenciaPalavras);
     }
 
-    public static Map<String, Integer> ordenarPorFrequencia(Map<String, Integer> mapa) {
+    private Map<String, Integer> ordenarPorFrequencia(Map<String, Integer> mapa) {
         List<Map.Entry<String, Integer>> lista = new ArrayList<>(mapa.entrySet());
 
         Comparator<Map.Entry<String, Integer>> comparador = (entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue());
@@ -105,7 +106,7 @@ public class DocumentacaoService {
         return resultado;
     }
 
-    public static Map<String, Integer> contarPalavras(String texto) {
+    private Map<String, Integer> contarPalavras(String texto) {
         String[] palavras = texto.split("\\s+");
 
         Map<String, Integer> frequenciaPalavras = new HashMap<>();

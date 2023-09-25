@@ -12,6 +12,8 @@ import ori.pedrosousa.findwords.config.exceptions.RegraDeNegocioException;
 import ori.pedrosousa.findwords.dto.DocumentacaoDTO;
 import ori.pedrosousa.findwords.dto.PageDTO;
 
+import java.util.List;
+
 public interface DocumentacaoArquivo {
 
     @Operation(summary = "Upload arquivos", description = "Adicionar repositório de arquivos")
@@ -36,7 +38,8 @@ public interface DocumentacaoArquivo {
     @GetMapping()
     ResponseEntity<PageDTO<DocumentacaoDTO>> list(@RequestParam Integer pagina, @RequestParam Integer tamanho);
 
-    @Operation(summary = "Listar ocorrência de palavras", description = "Listar ocorrência de palavras")
+    @Operation(summary = "Listar ocorrência de palavras",
+            description = "Lista ocorrência de palavras, somente os primeiros x (tamnho) elementos")
     @ApiResponses(
             value = {
                     @ApiResponse(responseCode = "200", description = "Palavras e frequência listados com sucesso"),
@@ -45,5 +48,5 @@ public interface DocumentacaoArquivo {
             }
     )
     @GetMapping("/ocorrencia-palavras")
-    ResponseEntity<PageDTO<String>> listarOcorrenciaPalavras(@RequestParam Integer pagina, @RequestParam Integer tamanho);
+    ResponseEntity<List<String>> listarOcorrenciaPalavras(@RequestParam Integer tamanho);
 }
