@@ -3,6 +3,8 @@ package ori.pedrosousa.findwords.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.jsoup.Jsoup;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,8 +16,9 @@ import ori.pedrosousa.findwords.dto.PageDTO;
 import ori.pedrosousa.findwords.entity.DocumentacaoEntity;
 import ori.pedrosousa.findwords.repository.DocumentacaoRepository;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,10 +34,15 @@ public class DocumentacaoService {
         try{
             List<MultipartFile> listaArquivos = List.of(arquivos);
             for (MultipartFile multipartFile:listaArquivos) {
-                File file = multipartToFile(multipartFile, multipartFile.getName());
+                File file = multipartToFile(multipartFile, multipartFile.getOriginalFilename());
+                String result = Jsoup.parse(FileUtils.readFileToString(file)).text().toLowerCase();
+
+                String utf8EncodedString = StringEscapeUtils.unescapeHtml4(result);
+                String textoNormalizado = normalizarTexto(utf8EncodedString);
+
                 documentacaoRepository.save(DocumentacaoEntity.builder()
-                        .nomeArquivo(multipartFile.getName())
-                        .texto(FileUtils.readFileToString(file, "UTF-8"))
+                        .nomeArquivo(file.getName())
+                        .texto(textoNormalizado)
                         .build());
             }
         }catch(IOException e){
@@ -63,4 +71,20 @@ public class DocumentacaoService {
         multipart.transferTo(convFile);
         return convFile;
     }
+
+    private String removerCaracteresNaoAlfaNum(String text) {
+        return text.replaceAll("[^a-zA-Z0-9\\s]", "");
+    }
+
+    public static String normalizarTexto(String text) {
+        String textoSemAcentos = Normalizer.normalize(text, Normalizer.Form.NFD)
+                .replaceAll("[^\\p{ASCII}]", "");
+
+        textoSemAcentos = textoSemAcentos.replaceAll("ç", "c");
+
+        textoSemAcentos = textoSemAcentos.replaceAll("\\p{Punct}\\p{Digit}", "");
+
+        return textoSemAcentos;
+    }
+
 }

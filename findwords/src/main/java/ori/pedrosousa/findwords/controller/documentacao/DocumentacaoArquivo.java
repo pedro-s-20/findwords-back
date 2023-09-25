@@ -12,8 +12,6 @@ import ori.pedrosousa.findwords.config.exceptions.RegraDeNegocioException;
 import ori.pedrosousa.findwords.dto.DocumentacaoDTO;
 import ori.pedrosousa.findwords.dto.PageDTO;
 
-import java.util.List;
-
 public interface DocumentacaoArquivo {
 
     @Operation(summary = "Upload arquivo", description = "Adicionar repositório de arquivos")
@@ -24,8 +22,8 @@ public interface DocumentacaoArquivo {
                     @ApiResponse(responseCode = "500", description = "Foi gerada uma exceção")
             }
     )
-    @PostMapping
-    ResponseEntity<Void> uploadArchive(@RequestParam MultipartFile[] arquivo) throws RegraDeNegocioException;
+    @PostMapping(consumes = { "multipart/form-data" })
+    ResponseEntity<Void> uploadArchive(@RequestParam MultipartFile[] arquivos) throws RegraDeNegocioException;
 
     @Operation(summary = "Listar arquvios", description = "Lista todos os arquivos")
     @ApiResponses(

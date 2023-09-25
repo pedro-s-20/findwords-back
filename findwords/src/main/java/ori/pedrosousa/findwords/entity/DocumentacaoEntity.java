@@ -22,6 +22,7 @@ public class DocumentacaoEntity implements Serializable {
     @Column(name="nome")
     private String nomeArquivo;
 
+    @Lob
     @Column(name="texto")
     private String texto;
 

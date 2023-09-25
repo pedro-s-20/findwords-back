@@ -12,8 +12,6 @@ import ori.pedrosousa.findwords.dto.DocumentacaoDTO;
 import ori.pedrosousa.findwords.dto.PageDTO;
 import ori.pedrosousa.findwords.service.DocumentacaoService;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/arquivo")
 @RequiredArgsConstructor
