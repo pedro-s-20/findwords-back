@@ -1,0 +1,13 @@
+package ori.pedrosousa.findwords.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class DocumentacaoDTO {
+    private Long id;
+    private String nomeArquivo;
+    private String texto;
+}
