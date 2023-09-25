@@ -19,7 +19,7 @@ import ori.pedrosousa.findwords.repository.DocumentacaoRepository;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -66,23 +66,72 @@ public class DocumentacaoService {
                 documentacaoDTOList);
     }
 
+    public PageDTO<String> listarOcorrenciaPalavras(Integer pagina, Integer tamanho){
+        StringBuilder acervoEmTexto = new StringBuilder();
+        List<DocumentacaoEntity> itens = documentacaoRepository.findAll();
+
+        for (DocumentacaoEntity doc:itens) {
+            acervoEmTexto.append(" ").append(doc.getTexto());
+        }
+
+        Map<String, Integer> frequenciaPalavras = contarPalavras(acervoEmTexto.toString());
+
+        Map<String, Integer> frequenciaPalavrasOrdenada = ordenarPorFrequencia(frequenciaPalavras);
+
+        List<String> palavrasEFrenquencias = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : frequenciaPalavrasOrdenada.entrySet()) {
+            palavrasEFrenquencias.add(entry.getKey() + ": " + entry.getValue());
+        }
+
+        return new PageDTO<>((long) palavrasEFrenquencias.size(),
+                (palavrasEFrenquencias.size()/tamanho),
+                pagina,
+                tamanho,
+                palavrasEFrenquencias);
+    }
+
+    public static Map<String, Integer> ordenarPorFrequencia(Map<String, Integer> mapa) {
+        List<Map.Entry<String, Integer>> lista = new ArrayList<>(mapa.entrySet());
+
+        Comparator<Map.Entry<String, Integer>> comparador = (entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue());
+
+        lista.sort(comparador);
+
+        Map<String, Integer> resultado = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : lista) {
+            resultado.put(entry.getKey(), entry.getValue());
+        }
+
+        return resultado;
+    }
+
+    public static Map<String, Integer> contarPalavras(String texto) {
+        String[] palavras = texto.split("\\s+");
+
+        Map<String, Integer> frequenciaPalavras = new HashMap<>();
+
+        for (String palavra : palavras) {
+            if(palavra.length() > 1){
+                int frequencia = frequenciaPalavras.getOrDefault(palavra, 0);
+                frequenciaPalavras.put(palavra, frequencia + 1);
+            }
+        }
+        return frequenciaPalavras;
+    }
+
     private File multipartToFile(MultipartFile multipart, String fileName) throws IllegalStateException, IOException {
         File convFile = new File(System.getProperty("java.io.tmpdir")+"/" + fileName);
         multipart.transferTo(convFile);
         return convFile;
     }
 
-    private String removerCaracteresNaoAlfaNum(String text) {
-        return text.replaceAll("[^a-zA-Z0-9\\s]", "");
-    }
-
-    public static String normalizarTexto(String text) {
+    private String normalizarTexto(String text) {
         String textoSemAcentos = Normalizer.normalize(text, Normalizer.Form.NFD)
                 .replaceAll("[^\\p{ASCII}]", "");
 
         textoSemAcentos = textoSemAcentos.replaceAll("ç", "c");
-
-        textoSemAcentos = textoSemAcentos.replaceAll("\\p{Punct}\\p{Digit}", "");
+        textoSemAcentos = textoSemAcentos.replaceAll("\\p{Punct}", "");
+        textoSemAcentos = textoSemAcentos.replaceAll("\\p{Digit}", "");
 
         return textoSemAcentos;
     }

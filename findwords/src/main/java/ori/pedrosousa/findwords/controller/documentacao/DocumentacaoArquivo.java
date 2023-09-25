@@ -14,10 +14,10 @@ import ori.pedrosousa.findwords.dto.PageDTO;
 
 public interface DocumentacaoArquivo {
 
-    @Operation(summary = "Upload arquivo", description = "Adicionar repositório de arquivos")
+    @Operation(summary = "Upload arquivos", description = "Adicionar repositório de arquivos")
     @ApiResponses(
             value = {
-                    @ApiResponse(responseCode = "200", description = "Arquivo adicionado com sucesso"),
+                    @ApiResponse(responseCode = "200", description = "Arquivos adicionados com sucesso"),
                     @ApiResponse(responseCode = "403", description = "Você não tem permissão para acessar este recurso"),
                     @ApiResponse(responseCode = "500", description = "Foi gerada uma exceção")
             }
@@ -28,11 +28,22 @@ public interface DocumentacaoArquivo {
     @Operation(summary = "Listar arquvios", description = "Lista todos os arquivos")
     @ApiResponses(
             value = {
-                    @ApiResponse(responseCode = "200", description = "Todos os Agendamentos foram listados com sucesso"),
+                    @ApiResponse(responseCode = "200", description = "Todos os arquivos foram listados com sucesso"),
                     @ApiResponse(responseCode = "403", description = "Você não tem permissão para acessar este recurso"),
                     @ApiResponse(responseCode = "500", description = "Foi gerada uma exceção")
             }
     )
     @GetMapping()
     ResponseEntity<PageDTO<DocumentacaoDTO>> list(@RequestParam Integer pagina, @RequestParam Integer tamanho);
+
+    @Operation(summary = "Listar ocorrência de palavras", description = "Listar ocorrência de palavras")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(responseCode = "200", description = "Palavras e frequência listados com sucesso"),
+                    @ApiResponse(responseCode = "403", description = "Você não tem permissão para acessar este recurso"),
+                    @ApiResponse(responseCode = "500", description = "Foi gerada uma exceção")
+            }
+    )
+    @GetMapping("/ocorrencia-palavras")
+    ResponseEntity<PageDTO<String>> listarOcorrenciaPalavras(@RequestParam Integer pagina, @RequestParam Integer tamanho);
 }

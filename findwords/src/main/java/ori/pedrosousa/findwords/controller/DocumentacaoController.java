@@ -29,4 +29,9 @@ public class DocumentacaoController implements DocumentacaoArquivo {
     public ResponseEntity<PageDTO<DocumentacaoDTO>> list(Integer pagina, Integer tamanho) {
         return new ResponseEntity<>(documentacaoService.list(pagina, tamanho), HttpStatus.OK);
     }
+
+    @Override
+    public ResponseEntity<PageDTO<String>> listarOcorrenciaPalavras(Integer pagina, Integer tamanho) {
+        return new ResponseEntity<>(documentacaoService.listarOcorrenciaPalavras(pagina, tamanho), HttpStatus.OK);
+    }
 }
