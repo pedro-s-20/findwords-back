@@ -30,17 +30,17 @@ public class DocumentacaoController implements DocumentacaoArquivo {
     }
 
     @Override
-    public ResponseEntity<PageDTO<DocumentacaoDTO>> list(Integer pagina, Integer tamanho) {
+    public ResponseEntity<PageDTO<DocumentacaoDTO>> list(Integer pagina, Integer tamanho) throws RegraDeNegocioException {
         return new ResponseEntity<>(documentacaoService.list(pagina, tamanho), HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<List<String>> listarOcorrenciaPalavras(Integer tamanho) {
+    public ResponseEntity<List<String>> listarOcorrenciaPalavras(Integer tamanho) throws RegraDeNegocioException {
         return new ResponseEntity<>(documentacaoService.listarOcorrenciaPalavras(tamanho), HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<?> gerarGraficoOcorrenciaPalavras(Integer tamanho) {
+    public ResponseEntity<?> gerarGraficoOcorrenciaPalavras(Integer tamanho) throws RegraDeNegocioException {
         GraficoDTO graficoDTO = documentacaoService.gerarGraficoOcorrenciaPalavras(tamanho);
         return ResponseEntity
                 .ok()

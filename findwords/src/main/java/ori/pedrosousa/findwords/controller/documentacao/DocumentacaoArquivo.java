@@ -36,7 +36,7 @@ public interface DocumentacaoArquivo {
             }
     )
     @GetMapping()
-    ResponseEntity<PageDTO<DocumentacaoDTO>> list(@RequestParam Integer pagina, @RequestParam Integer tamanho);
+    ResponseEntity<PageDTO<DocumentacaoDTO>> list(@RequestParam Integer pagina, @RequestParam Integer tamanho)  throws RegraDeNegocioException;
 
     @Operation(summary = "Listar ocorrência de palavras",
             description = "Lista ocorrência de palavras, somente os primeiros x (tamnho) elementos")
@@ -48,7 +48,7 @@ public interface DocumentacaoArquivo {
             }
     )
     @GetMapping("/ocorrencia-palavras")
-    ResponseEntity<List<String>> listarOcorrenciaPalavras(@RequestParam Integer tamanho);
+    ResponseEntity<List<String>> listarOcorrenciaPalavras(@RequestParam Integer tamanho) throws RegraDeNegocioException;
 
     @Operation(summary = "Gerar gráfico com ocorrência de palavras",
             description = "Gera gráfico com ocorrência de palavras, somente os primeiros x (tamnho) elementos")
@@ -60,5 +60,5 @@ public interface DocumentacaoArquivo {
             }
     )
     @GetMapping("/ocorrencia-palavras/grafico")
-    ResponseEntity<?> gerarGraficoOcorrenciaPalavras(@RequestParam Integer tamanho);
+    ResponseEntity<?> gerarGraficoOcorrenciaPalavras(@RequestParam Integer tamanho) throws RegraDeNegocioException;
 }

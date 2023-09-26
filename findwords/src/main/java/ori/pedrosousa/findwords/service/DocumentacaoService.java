@@ -30,6 +30,7 @@ import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Service
@@ -59,10 +60,14 @@ public class DocumentacaoService {
         }
     }
 
-    public PageDTO<DocumentacaoDTO> list(Integer pagina, Integer tamanho){
+    public PageDTO<DocumentacaoDTO> list(Integer pagina, Integer tamanho) throws RegraDeNegocioException {
         Pageable solicitacaoPagina = PageRequest.of(pagina,tamanho);
         Page<DocumentacaoEntity> documentacao = documentacaoRepository.findAll(solicitacaoPagina);
         List<DocumentacaoEntity> documentacaoEntityList = documentacao.getContent().stream().toList();
+
+        if(documentacaoEntityList.isEmpty()){
+            throw new RegraDeNegocioException("Nenhum elemento cadastrado. Faça upload de arquivo antes.");
+        }
 
         List<DocumentacaoDTO> documentacaoDTOList = documentacaoEntityList.stream()
                 .map(item -> objectMapper.convertValue(item, DocumentacaoDTO.class))
@@ -75,17 +80,47 @@ public class DocumentacaoService {
                 documentacaoDTOList);
     }
 
-    public GraficoDTO gerarGraficoOcorrenciaPalavras(Integer tamanho){
+    public List<String> listarOcorrenciaPalavras(Integer tamanho) throws RegraDeNegocioException {
+
+        Map<String, Integer> palavrasEFreq = retornarListaDeOcorrencias();
+
+        if(palavrasEFreq.isEmpty()){
+            throw new RegraDeNegocioException("Nenhum elemento cadastrado. Faça upload de arquivo antes.");
+        }
+
+        List<String> palavrasEFrenquencias = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : palavrasEFreq.entrySet()) {
+            palavrasEFrenquencias.add(entry.getKey() + ": " + entry.getValue());
+        }
+
+        return palavrasEFrenquencias.subList(0, tamanho-1);
+    }
+
+    public GraficoDTO gerarGraficoOcorrenciaPalavras(Integer tamanho) throws RegraDeNegocioException {
+        if(tamanho > 100){
+            throw new RegraDeNegocioException("Só é possível gerar um gráfico das 100 primeiras palavras.");
+        }
+
         Map<String, Integer> todosElementos = retornarListaDeOcorrencias();
+
+        if(todosElementos.isEmpty()){
+            throw new RegraDeNegocioException("Nenhum elemento cadastrado. Faça upload de arquivo antes.");
+        }
 
         Map<String, Integer> palavrasEFreq = todosElementos.entrySet()
                 .stream()
+                .sorted((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()))
                 .limit(tamanho)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
 
         DefaultCategoryDataset barra = new DefaultCategoryDataset();
         for (Map.Entry<String, Integer> item: palavrasEFreq.entrySet()) {
-            barra.setValue(item.getValue(), item.getKey(), "");
+            barra.addValue(item.getValue(), item.getKey(), "");
         }
 
         JFreeChart grafico = ChartFactory.createBarChart3D("Ocorrências de palavras no repositório",
@@ -98,7 +133,7 @@ public class DocumentacaoService {
                 false);
         try {
             ChartUtilities.saveChartAsJPEG(
-                    new File(System.getProperty("java.io.tmpdir")+"/grafico"), grafico, 1920, 1080);
+                    new File(System.getProperty("java.io.tmpdir")+"/grafico"), grafico, 1080, 1080);
             var file = new File(System.getProperty("java.io.tmpdir")+"/grafico");
             var path = Paths.get(file.getAbsolutePath());
             return GraficoDTO.builder().imagem(new ByteArrayResource(Files.readAllBytes(path))).tamanho(file.length()).build();
@@ -106,18 +141,6 @@ public class DocumentacaoService {
             new RegraDeNegocioException("Erro ao salvar imagem em arquivo.");
         }
         return null;
-    }
-
-    public List<String> listarOcorrenciaPalavras(Integer tamanho){
-
-        Map<String, Integer> palavrasEFreq = retornarListaDeOcorrencias();
-
-        List<String> palavrasEFrenquencias = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : palavrasEFreq.entrySet()) {
-            palavrasEFrenquencias.add(entry.getKey() + ": " + entry.getValue());
-        }
-
-        return palavrasEFrenquencias.subList(0, tamanho-1);
     }
 
     private Map<String, Integer> retornarListaDeOcorrencias(){
