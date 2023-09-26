@@ -46,8 +46,8 @@ public class DocumentacaoService {
                 File file = multipartToFile(multipartFile, multipartFile.getOriginalFilename());
                 String result = Jsoup.parse(FileUtils.readFileToString(file)).text().toLowerCase();
 
-                String utf8EncodedString = StringEscapeUtils.unescapeHtml4(result);
-                String textoNormalizado = normalizarTexto(utf8EncodedString);
+                String unescapeHtml4 = StringEscapeUtils.unescapeHtml4(result);
+                String textoNormalizado = normalizarTexto(unescapeHtml4);
 
                 documentacaoRepository.save(DocumentacaoEntity.builder()
                         .nomeArquivo(file.getName())
