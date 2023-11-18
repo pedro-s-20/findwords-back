@@ -9,5 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TermoDTO {
     private String palavra;
-    private OperadorLogicoEnum operadorAnterior;
+    private OperadorLogicoEnum operadorProximo;
 }

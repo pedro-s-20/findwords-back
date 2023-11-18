@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.text.Normalizer;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -90,7 +89,7 @@ public class DocumentacaoService {
 
     public PageDTO<DocumentacaoDTO> listByBooleanSearch(Integer pagina, Integer tamanho, List<TermoDTO> termos) throws RegraDeNegocioException {
 
-        if(termos.get(0).getPalavra().isBlank() && termos.get(0).getOperadorAnterior() == OperadorLogicoEnum.NOT){
+        if(termos.get(0).getPalavra().isBlank() && termos.get(0).getOperadorProximo() == OperadorLogicoEnum.NOT){
             termos.stream().skip(1).forEach(x -> x.setPalavra(normalizarTexto(x.getPalavra().toLowerCase())));
         }else{
             termos.forEach(x -> x.setPalavra(normalizarTexto(x.getPalavra().toLowerCase())));
@@ -107,143 +106,57 @@ public class DocumentacaoService {
         }
 
         Set<PalavraEntity> palavrasTotais = new HashSet<>(palavraRepository.findAll());
-        List<PalavraEntity> palavrasPertecentesTemp = new ArrayList<>();
-
         Set<DocumentacaoEntity> documentacaoTotal = new HashSet<>(documentacaoEntityList);
         Set<DocumentacaoEntity> documentacaoARemover = new HashSet<>();
+        PalavraEntity palavraPesquisadaTemp = null;
 
-        for (int i = 0; i < termos.size(); i++) {
-            TermoDTO termoAtual = termos.get(i);
-            if(termos.size() == 1) {
-                for (PalavraEntity palavra : palavrasTotais) {
-                    if (!termoAtual.getPalavra().isBlank()
-                            && palavra.getNome().equals(termoAtual.getPalavra())) {
-                        palavrasPertecentesTemp.add(palavra);
-                        break;
-                    }
+        for (int i = 0; i < termos.size()-1; i++) {
+            TermoDTO termoProx = termos.get(i+1);
+            OperadorLogicoEnum operador = termos.get(i).getOperadorProximo();
+
+            for (PalavraEntity palavra : palavrasTotais) {
+                if(palavra.getNome().equals(termoProx.getPalavra())){
+                    palavraPesquisadaTemp = palavra;
                 }
-                if(palavrasPertecentesTemp.isEmpty()){
-                    palavrasPertecentesTemp.add(PalavraEntity.builder().nome(termoAtual.getPalavra()).build());
-                }
-                if (termoAtual.getOperadorAnterior() == OperadorLogicoEnum.NOT) {
+            }
+
+            if(palavraPesquisadaTemp == null){
+                palavraPesquisadaTemp = PalavraEntity.builder().nome(termoProx.getPalavra()).build();
+            }
+
+            switch (operador) {
+                case AND -> {
                     for (DocumentacaoEntity doc : documentacaoEntityList) {
-                        if (doc.getPalavras().contains(palavrasPertecentesTemp.get(0))) {
+                        if (!doc.getPalavras().contains(palavraPesquisadaTemp)) {
                             documentacaoARemover.add(doc);
                         }
                     }
                     documentacaoEntityList.removeAll(documentacaoARemover);
-                } else {
+                }
+                case OR -> {
+                    for (DocumentacaoEntity doc : documentacaoTotal) {
+                        if (doc.getPalavras().contains(palavraPesquisadaTemp)) {
+                            documentacaoEntityList.add(doc);
+                        }
+                    }
+                }
+                case NOT -> {
                     for (DocumentacaoEntity doc : documentacaoEntityList) {
-                        for (PalavraEntity palavra : palavrasPertecentesTemp) {
-                            if (!doc.getPalavras().contains(palavra)) {
-                                documentacaoARemover.add(doc);
-                            }
+                        if (doc.getPalavras().contains(palavraPesquisadaTemp)) {
+                            documentacaoARemover.add(doc);
                         }
                     }
                     documentacaoEntityList.removeAll(documentacaoARemover);
                 }
-                continue;
             }
-
-            if(i < (termos.size()-1)){
-                TermoDTO termoProx = termos.get(i+1);
-                OperadorLogicoEnum operador = termos.get(i).getOperadorAnterior();
-
-                if(termos.get(0).getPalavra().isBlank()){
-                    for (PalavraEntity palavra : palavrasTotais) {
-                        if(palavra.getNome().equals(termoProx.getPalavra())){
-                            palavrasPertecentesTemp.add(palavra);
-                        }
-                    }
-                }else{
-                    for (PalavraEntity palavra : palavrasTotais) {
-                        if(palavra.getNome().equals(termoAtual.getPalavra())
-                                || palavra.getNome().equals(termoProx.getPalavra())){
-                            palavrasPertecentesTemp.add(palavra);
-                        }
-                    }
-                }
-
-                if(palavrasPertecentesTemp.isEmpty()){
-                    if (termos.get(0).getPalavra().isBlank()) {
-                        palavrasPertecentesTemp.add(PalavraEntity.builder().nome(termoProx.getPalavra()).build());
-                    }else{
-                        palavrasPertecentesTemp.add(PalavraEntity.builder().nome(termoAtual.getPalavra()).build());
-                        palavrasPertecentesTemp.add(PalavraEntity.builder().nome(termoProx.getPalavra()).build());
-                    }
-                }
-                if(palavrasPertecentesTemp.size() == 1 && !termos.get(0).getPalavra().isBlank()){
-                    if(palavrasPertecentesTemp.get(0).getNome().equals(termoAtual.getPalavra())){
-                        palavrasPertecentesTemp.add(PalavraEntity.builder().nome(termoProx.getPalavra()).build());
-                    }else{
-                        palavrasPertecentesTemp.add(PalavraEntity.builder().nome(termoAtual.getPalavra()).build());
-                    }
-                }
-                switch (operador) {
-                    case AND -> {
-                        if (palavrasPertecentesTemp.size() == 1) {
-                            for (DocumentacaoEntity doc : documentacaoEntityList) {
-                                if (!doc.getPalavras().contains(palavrasPertecentesTemp.get(0))) {
-                                    documentacaoARemover.add(doc);
-                                }
-                            }
-                            documentacaoEntityList.removeAll(documentacaoARemover);
-                        } else {
-                            for (DocumentacaoEntity doc : documentacaoEntityList) {
-                                if (!doc.getPalavras().contains(palavrasPertecentesTemp.get(0))
-                                        || !doc.getPalavras().contains(palavrasPertecentesTemp.get(1))) {
-                                    documentacaoARemover.add(doc);
-                                }
-                            }
-                            documentacaoEntityList.removeAll(documentacaoARemover);
-                        }
-                    }
-                    case OR -> {
-                        if (palavrasPertecentesTemp.size() == 1) {
-                            for (DocumentacaoEntity doc : documentacaoTotal) {
-                                if (doc.getPalavras().contains(palavrasPertecentesTemp.get(0))) {
-                                    documentacaoEntityList.add(doc);
-                                }
-                            }
-                        } else {
-                            for (DocumentacaoEntity doc : documentacaoTotal) {
-                                if (doc.getPalavras().contains(palavrasPertecentesTemp.get(0))
-                                        && doc.getPalavras().contains(palavrasPertecentesTemp.get(1))) {
-                                    documentacaoEntityList.add(doc);
-                                }
-                            }
-                        }
-                    }
-                    case NOT -> {
-                        if (palavrasPertecentesTemp.size() == 1) {
-                            for (DocumentacaoEntity doc : documentacaoEntityList) {
-                                if (doc.getPalavras().contains(palavrasPertecentesTemp.get(0))) {
-                                    documentacaoARemover.add(doc);
-                                }
-                            }
-                            documentacaoEntityList.removeAll(documentacaoARemover);
-                        } else {
-                            for (DocumentacaoEntity doc : documentacaoEntityList) {
-                                for (int j = 0; j < 2; j++) {
-                                    if (!doc.getPalavras().contains(palavrasPertecentesTemp.get(0))
-                                            && doc.getPalavras().contains(palavrasPertecentesTemp.get(1))) {
-                                        documentacaoARemover.add(doc);
-                                    }
-                                }
-                            }
-                            documentacaoEntityList.removeAll(documentacaoARemover);
-                        }
-                    }
-                }
-            }
+            documentacaoARemover.clear();
+            palavraPesquisadaTemp = null;
         }
 
         List<DocumentacaoDTO> documentacaoDTOList = documentacaoEntityList.stream()
                 .map(item -> objectMapper.convertValue(item, DocumentacaoDTO.class))
                 .collect(Collectors.toList());
 
-        documentacaoARemover.clear();
-        palavrasPertecentesTemp.clear();
 
         return criarPageDTO(documentacaoDTOList, tamanho, pagina);
     }
