@@ -10,5 +10,4 @@ import lombok.NoArgsConstructor;
 public class DocumentacaoDTO {
     private Long id;
     private String nomeArquivo;
-    private String texto;
 }

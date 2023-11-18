@@ -10,14 +10,14 @@ import org.springframework.web.multipart.MultipartFile;
 import ori.pedrosousa.findwords.config.exceptions.RegraDeNegocioException;
 import ori.pedrosousa.findwords.controller.documentacao.DocumentacaoArquivo;
 import ori.pedrosousa.findwords.dto.DocumentacaoDTO;
-import ori.pedrosousa.findwords.dto.GraficoDTO;
 import ori.pedrosousa.findwords.dto.PageDTO;
+import ori.pedrosousa.findwords.dto.TermoDTO;
 import ori.pedrosousa.findwords.service.DocumentacaoService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/arquivo")
+@RequestMapping("/arquivos")
 @RequiredArgsConstructor
 public class DocumentacaoController implements DocumentacaoArquivo {
 
@@ -35,17 +35,14 @@ public class DocumentacaoController implements DocumentacaoArquivo {
     }
 
     @Override
-    public ResponseEntity<List<String>> listarOcorrenciaPalavras(Integer tamanho) throws RegraDeNegocioException {
-        return new ResponseEntity<>(documentacaoService.listarOcorrenciaPalavras(tamanho), HttpStatus.OK);
+    public ResponseEntity<byte[]> downloadArchive(Long id) throws RegraDeNegocioException {
+        byte[] archive = documentacaoService.download(id);
+        return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.TEXT_HTML).body(archive);
     }
 
     @Override
-    public ResponseEntity<?> gerarGraficoOcorrenciaPalavras(Integer tamanho) throws RegraDeNegocioException {
-        GraficoDTO graficoDTO = documentacaoService.gerarGraficoOcorrenciaPalavras(tamanho);
-        return ResponseEntity
-                .ok()
-                .contentType(MediaType.IMAGE_JPEG)
-                .contentLength(graficoDTO.getTamanho())
-                .body(graficoDTO.getImagem());
+    public ResponseEntity<PageDTO<DocumentacaoDTO>> listByBooleanSearch(Integer pagina, Integer tamanho, List<TermoDTO> termos) throws RegraDeNegocioException {
+        return new ResponseEntity<>(documentacaoService.listByBooleanSearch(pagina, tamanho, termos), HttpStatus.OK);
     }
+
 }
