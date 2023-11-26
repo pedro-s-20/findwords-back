@@ -58,7 +58,7 @@ public interface DocumentacaoArquivo {
                     @ApiResponse(responseCode = "500", description = "Foi gerada uma exceção")
             }
     )
-    @GetMapping("/boolean-search")
+    @PostMapping("/boolean-search")
     ResponseEntity<PageDTO<DocumentacaoDTO>> listByBooleanSearch(@RequestParam Integer pagina,
                                                                  @RequestParam Integer tamanho,
                                                                  @RequestBody List<TermoDTO> termos)  throws RegraDeNegocioException;
