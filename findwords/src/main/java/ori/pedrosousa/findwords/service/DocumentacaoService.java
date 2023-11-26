@@ -70,6 +70,7 @@ public class DocumentacaoService {
 
         List<DocumentacaoDTO> documentacaoDTOList = documentacaoEntityList.stream()
                 .map(item -> objectMapper.convertValue(item, DocumentacaoDTO.class))
+                .sorted(Comparator.comparingInt(o -> o.getId().intValue()))
                 .collect(Collectors.toList());;
 
         return new PageDTO<>(documentacao.getTotalElements(),
@@ -155,6 +156,7 @@ public class DocumentacaoService {
 
         List<DocumentacaoDTO> documentacaoDTOList = documentacaoEntityList.stream()
                 .map(item -> objectMapper.convertValue(item, DocumentacaoDTO.class))
+                .sorted(Comparator.comparingInt(o -> o.getId().intValue()))
                 .collect(Collectors.toList());
 
 
