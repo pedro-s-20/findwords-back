@@ -63,4 +63,16 @@ public interface DocumentacaoArquivo {
                                                                  @RequestParam Integer tamanho,
                                                                  @RequestBody List<TermoDTO> termos)  throws RegraDeNegocioException;
 
+    @Operation(summary = "Listar busca vetorial ranqueada", description = "Listar arquivos por método de busca vetoral com ranking")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(responseCode = "200", description = "Arquivos encontrados com sucesso"),
+                    @ApiResponse(responseCode = "403", description = "Você não tem permissão para acessar este recurso"),
+                    @ApiResponse(responseCode = "500", description = "Foi gerada uma exceção")
+            }
+    )
+    @PostMapping("/vetorial-ranking-search")
+    ResponseEntity<PageDTO<DocumentacaoDTO>> listByVetorialRankingSearch(@RequestParam Integer pagina,
+                                                                         @RequestParam Integer tamanho,
+                                                                         @RequestBody String pesquisa)  throws RegraDeNegocioException;
 }

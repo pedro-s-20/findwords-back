@@ -16,8 +16,10 @@ import ori.pedrosousa.findwords.dto.OperadorLogicoEnum;
 import ori.pedrosousa.findwords.dto.PageDTO;
 import ori.pedrosousa.findwords.dto.TermoDTO;
 import ori.pedrosousa.findwords.entity.DocumentacaoEntity;
+import ori.pedrosousa.findwords.entity.PalavraDocumentacaoFreqEntity;
 import ori.pedrosousa.findwords.entity.PalavraEntity;
 import ori.pedrosousa.findwords.repository.DocumentacaoRepository;
+import ori.pedrosousa.findwords.repository.PalavraDocumentacaoFreqRepository;
 import ori.pedrosousa.findwords.repository.PalavraRepository;
 
 import java.io.File;
@@ -34,6 +36,7 @@ public class DocumentacaoService {
 
     private final DocumentacaoRepository documentacaoRepository;
     private final PalavraRepository palavraRepository;
+    private final PalavraDocumentacaoFreqRepository palavraDocumentacaoFreqRepository;
     private final ObjectMapper objectMapper;
 
     public void upload(MultipartFile[] arquivos) throws RegraDeNegocioException {
@@ -163,6 +166,12 @@ public class DocumentacaoService {
         return criarPageDTO(documentacaoDTOList, tamanho, pagina);
     }
 
+    public PageDTO<DocumentacaoDTO> listByVetorialRankingSearch(Integer pagina, Integer tamanho, String pesquisa) {
+
+
+        return null;
+    }
+
     private Map<String, Integer> separarPalavrasDocumento(DocumentacaoEntity documentacaoEntity, String textoNormalizado) {
         String[] palavras = textoNormalizado.split("\\s+");
 
@@ -182,11 +191,31 @@ public class DocumentacaoService {
 
                 palavrasBanco.add(palavra);
 
+                PalavraDocumentacaoFreqEntity palavraDocumentacaoFreq = new PalavraDocumentacaoFreqEntity();
+                palavraDocumentacaoFreq.setIdPalavra(palavraEntityNova.getId());
+                palavraDocumentacaoFreq.setIdDocumentacao(documentacaoEntity.getId());
+                palavraDocumentacaoFreq.setFrequencia(0L);
+                palavraDocumentacaoFreqRepository.save(palavraDocumentacaoFreq);
+
             }else if(palavra.length() > 1 && palavrasBanco.contains(palavra)){
                 Optional<PalavraEntity> palavraArmazenada = palavraRepository.getPalavraEntityByNome(palavra);
                 if (palavraArmazenada.isPresent() &&
                         !palavraArmazenada.get().getDocumentos().contains(documentacaoEntity)){
                     palavraArmazenada.get().getDocumentos().add(documentacaoEntity);
+
+                    PalavraDocumentacaoFreqEntity palavraDocumentacaoFreq = new PalavraDocumentacaoFreqEntity();
+                    palavraDocumentacaoFreq.setIdPalavra(palavraArmazenada.get().getId());
+                    palavraDocumentacaoFreq.setIdDocumentacao(documentacaoEntity.getId());
+                    palavraDocumentacaoFreq.setFrequencia(0L);
+                    palavraDocumentacaoFreqRepository.save(palavraDocumentacaoFreq);
+                }else{
+                    Optional<PalavraDocumentacaoFreqEntity> palavraDocumentacaoFreqEntityOptional = palavraDocumentacaoFreqRepository
+                            .getPalavraDocumentacaoFreqEntityByIdPalavraAndIdDocumentacao(palavraArmazenada.get().getId(), documentacaoEntity.getId());
+                    if(palavraDocumentacaoFreqEntityOptional.isPresent()){
+                        PalavraDocumentacaoFreqEntity palavraDocumentacaoFreq = palavraDocumentacaoFreqEntityOptional.get();
+                        palavraDocumentacaoFreq.setFrequencia(palavraDocumentacaoFreq.getFrequencia()+1L);
+                        palavraDocumentacaoFreqRepository.save(palavraDocumentacaoFreq);
+                    }
                 }
             }
         }
@@ -232,5 +261,4 @@ public class DocumentacaoService {
 
         return pageDTO;
     }
-
 }
