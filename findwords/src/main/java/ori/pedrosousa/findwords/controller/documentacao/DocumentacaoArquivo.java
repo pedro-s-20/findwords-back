@@ -24,7 +24,7 @@ public interface DocumentacaoArquivo {
             }
     )
     @PostMapping(consumes = { "multipart/form-data" })
-    ResponseEntity<Void> uploadArchive(@RequestParam("files") MultipartFile[] arquivos) throws RegraDeNegocioException;
+    ResponseEntity<List<String>> uploadArchive(@RequestParam("files") MultipartFile[] arquivos) throws RegraDeNegocioException;
 
     @Operation(summary = "Listar arquvios", description = "Lista todos os arquivos")
     @ApiResponses(
