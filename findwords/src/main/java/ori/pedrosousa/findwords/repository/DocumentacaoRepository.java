@@ -6,5 +6,5 @@ import ori.pedrosousa.findwords.entity.DocumentacaoEntity;
 
 @Repository
 public interface DocumentacaoRepository extends JpaRepository<DocumentacaoEntity, Long> {
-
+    long countBy();
 }

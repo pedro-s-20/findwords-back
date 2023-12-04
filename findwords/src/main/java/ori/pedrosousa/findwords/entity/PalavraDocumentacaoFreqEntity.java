@@ -15,7 +15,7 @@ public class PalavraDocumentacaoFreqEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id_palavra_documentacao")
+    @Column(name = "id_palavra_documentacao_freq")
     private Long id;
 
     @Column(name = "id_palavra")

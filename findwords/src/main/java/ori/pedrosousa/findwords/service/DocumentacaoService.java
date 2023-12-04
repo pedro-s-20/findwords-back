@@ -166,10 +166,52 @@ public class DocumentacaoService {
         return criarPageDTO(documentacaoDTOList, tamanho, pagina);
     }
 
-    public PageDTO<DocumentacaoDTO> listByVetorialRankingSearch(Integer pagina, Integer tamanho, String pesquisa) {
+    public PageDTO<DocumentacaoDTO> listByVetorialRankingSearch(Integer pagina, Integer tamanho, String pesquisa) throws RegraDeNegocioException {
+        List<PalavraEntity> palavrasEncontradas = encontrarPalavrasPesquisadas(pesquisa);
+        Set<DocumentacaoEntity> documentacaoEntityList = new HashSet<>();
+        Map<Long, Double> documentoEPeso = new HashMap<>();
 
+        Set<DocumentacaoEntity> allDocs = new HashSet<>(documentacaoRepository.findAll());
 
-        return null;
+        if(allDocs.isEmpty()){
+            throw new RegraDeNegocioException("Nenhum elemento cadastrado. Faça upload de arquivo.");
+        }
+
+        if(!palavrasEncontradas.isEmpty()){
+            palavrasEncontradas.forEach(x -> documentacaoEntityList.addAll(x.getDocumentos()));
+
+            for(DocumentacaoEntity doc : documentacaoEntityList){
+                double tf = 0, idf, weight = 0;
+                for(PalavraEntity palavraPesquisa: palavrasEncontradas){
+                    Optional<PalavraDocumentacaoFreqEntity> palavraFrequenciaDoc = palavraDocumentacaoFreqRepository.getPalavraDocumentacaoFreqEntityByIdPalavraAndIdDocumentacao(palavraPesquisa.getId(), doc.getId());
+                    if(palavraFrequenciaDoc.isPresent()){
+                        tf = (double) palavraFrequenciaDoc.get().getFrequencia() / palavraDocumentacaoFreqRepository.maxValueByIdPalavra(palavraPesquisa.getId());
+                    }
+                    idf = Math.log10((double) documentacaoRepository.countBy() / (1 + palavraDocumentacaoFreqRepository.countByIdPalavra(palavraPesquisa.getId())));
+                    weight = weight + tf * idf;
+                }
+                documentoEPeso.put(doc.getId(), weight);
+            }
+
+            List<DocumentacaoDTO> documentacaoOrdenada = documentacaoEntityList.stream()
+                    .map(item -> objectMapper.convertValue(item, DocumentacaoDTO.class))
+                    .sorted(Comparator.comparingDouble(entity -> documentoEPeso.get(entity.getId())))
+                    .collect(Collectors.toList());
+
+            return criarPageDTO(documentacaoOrdenada, tamanho, pagina);
+        }
+        return criarPageDTO(Collections.emptyList(), tamanho, pagina);
+    }
+
+    private List<PalavraEntity> encontrarPalavrasPesquisadas(String pesquisa){
+        List<PalavraEntity> palavrasEncontradas = new ArrayList<>();
+        String pesquisaNormalizada = normalizarTexto(pesquisa);
+        String[] palavras = pesquisaNormalizada.split("\\s+");
+        for (String palavra : palavras) {
+            Optional<PalavraEntity> palavraEntityOptional = palavraRepository.getPalavraEntityByNome(palavra);
+            palavraEntityOptional.ifPresent(palavrasEncontradas::add);
+        }
+        return palavrasEncontradas;
     }
 
     private Map<String, Integer> separarPalavrasDocumento(DocumentacaoEntity documentacaoEntity, String textoNormalizado) {
@@ -187,14 +229,14 @@ public class DocumentacaoService {
                 Set<DocumentacaoEntity> documentacao = new HashSet<>();
                 documentacao.add(documentacaoEntity);
                 palavraEntityNova.setDocumentos(documentacao);
-                palavraRepository.save(palavraEntityNova);
+                PalavraEntity palavraEntitySalva = palavraRepository.save(palavraEntityNova);
 
                 palavrasBanco.add(palavra);
 
                 PalavraDocumentacaoFreqEntity palavraDocumentacaoFreq = new PalavraDocumentacaoFreqEntity();
-                palavraDocumentacaoFreq.setIdPalavra(palavraEntityNova.getId());
+                palavraDocumentacaoFreq.setIdPalavra(palavraEntitySalva.getId());
                 palavraDocumentacaoFreq.setIdDocumentacao(documentacaoEntity.getId());
-                palavraDocumentacaoFreq.setFrequencia(0L);
+                palavraDocumentacaoFreq.setFrequencia(1L);
                 palavraDocumentacaoFreqRepository.save(palavraDocumentacaoFreq);
 
             }else if(palavra.length() > 1 && palavrasBanco.contains(palavra)){
@@ -206,7 +248,7 @@ public class DocumentacaoService {
                     PalavraDocumentacaoFreqEntity palavraDocumentacaoFreq = new PalavraDocumentacaoFreqEntity();
                     palavraDocumentacaoFreq.setIdPalavra(palavraArmazenada.get().getId());
                     palavraDocumentacaoFreq.setIdDocumentacao(documentacaoEntity.getId());
-                    palavraDocumentacaoFreq.setFrequencia(0L);
+                    palavraDocumentacaoFreq.setFrequencia(1L);
                     palavraDocumentacaoFreqRepository.save(palavraDocumentacaoFreq);
                 }else{
                     Optional<PalavraDocumentacaoFreqEntity> palavraDocumentacaoFreqEntityOptional = palavraDocumentacaoFreqRepository
