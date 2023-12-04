@@ -203,6 +203,56 @@ public class DocumentacaoService {
         return criarPageDTO(Collections.emptyList(), tamanho, pagina);
     }
 
+    public PageDTO<DocumentacaoDTO> listByBM25RankingSearch(Integer pagina, Integer tamanho, String pesquisa) throws RegraDeNegocioException {
+        List<PalavraEntity> palavrasEncontradas = encontrarPalavrasPesquisadas(pesquisa);
+        Set<DocumentacaoEntity> documentacaoEntityList = new HashSet<>();
+        Map<Long, Double> documentoEPeso = new HashMap<>();
+
+        Set<DocumentacaoEntity> allDocs = new HashSet<>(documentacaoRepository.findAll());
+
+        if (allDocs.isEmpty()) {
+            throw new RegraDeNegocioException("Nenhum elemento cadastrado. Faça upload de arquivo.");
+        }
+
+        if (!palavrasEncontradas.isEmpty()) {
+            double k1 = 1.5;
+            double b = 0.75;
+            double avgdl = calcularComprimentoMedioDocumentos(allDocs);
+
+            palavrasEncontradas.forEach(x -> documentacaoEntityList.addAll(x.getDocumentos()));
+
+            for (DocumentacaoEntity doc : documentacaoEntityList) {
+                double score = 0;
+                for (PalavraEntity palavraPesquisa : palavrasEncontradas) {
+                    Optional<PalavraDocumentacaoFreqEntity> palavraFrequenciaDoc = palavraDocumentacaoFreqRepository.getPalavraDocumentacaoFreqEntityByIdPalavraAndIdDocumentacao(palavraPesquisa.getId(), doc.getId());
+                    if (palavraFrequenciaDoc.isPresent()) {
+                        double tf = (double) palavraFrequenciaDoc.get().getFrequencia() / palavraDocumentacaoFreqRepository.maxValueByIdPalavra(palavraPesquisa.getId());
+                        double idf = Math.log10((double) documentacaoRepository.countBy() / (1 + palavraDocumentacaoFreqRepository.countByIdPalavra(palavraPesquisa.getId())));
+
+                        double numerator = tf * (k1 + 1);
+                        double denominator = tf + k1 * (1 - b + b * (doc.getPalavras().size() / avgdl));
+
+                        score += idf * numerator / denominator;
+                    }
+                }
+                documentoEPeso.put(doc.getId(), score);
+            }
+
+            List<DocumentacaoDTO> documentacaoOrdenada = documentacaoEntityList.stream()
+                    .map(item -> objectMapper.convertValue(item, DocumentacaoDTO.class))
+                    .sorted(Comparator.comparingDouble(entity -> documentoEPeso.get(entity.getId())))
+                    .collect(Collectors.toList());
+
+            return criarPageDTO(documentacaoOrdenada, tamanho, pagina);
+        }
+        return criarPageDTO(Collections.emptyList(), tamanho, pagina);
+    }
+
+    private double calcularComprimentoMedioDocumentos(Set<DocumentacaoEntity> documentos) {
+        return documentos.stream().mapToDouble(doc -> doc.getPalavras().size()).average().orElse(0.0);
+    }
+
+
     private List<PalavraEntity> encontrarPalavrasPesquisadas(String pesquisa){
         List<PalavraEntity> palavrasEncontradas = new ArrayList<>();
         String pesquisaNormalizada = normalizarTexto(pesquisa);

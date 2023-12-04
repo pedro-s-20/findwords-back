@@ -75,4 +75,18 @@ public interface DocumentacaoArquivo {
     ResponseEntity<PageDTO<DocumentacaoDTO>> listByVetorialRankingSearch(@RequestParam Integer pagina,
                                                                          @RequestParam Integer tamanho,
                                                                          @RequestBody String pesquisa)  throws RegraDeNegocioException;
+
+
+    @Operation(summary = "Listar busca probabilístico com ranking", description = "Listar arquivos por método de busca probabilístico com ranking")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(responseCode = "200", description = "Arquivos encontrados com sucesso"),
+                    @ApiResponse(responseCode = "403", description = "Você não tem permissão para acessar este recurso"),
+                    @ApiResponse(responseCode = "500", description = "Foi gerada uma exceção")
+            }
+    )
+    @PostMapping("/probabilistic-ranking-search")
+    ResponseEntity<PageDTO<DocumentacaoDTO>> listByProbabilisticRankingSearch(@RequestParam Integer pagina,
+                                                                              @RequestParam Integer tamanho,
+                                                                              @RequestBody String pesquisa)  throws RegraDeNegocioException;
 }

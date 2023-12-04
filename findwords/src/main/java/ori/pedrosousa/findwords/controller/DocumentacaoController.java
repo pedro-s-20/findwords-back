@@ -60,4 +60,9 @@ public class DocumentacaoController implements DocumentacaoArquivo {
         return new ResponseEntity<>(documentacaoService.listByVetorialRankingSearch(pagina, tamanho, pesquisa), HttpStatus.OK);
     }
 
+    @Override
+    public ResponseEntity<PageDTO<DocumentacaoDTO>> listByProbabilisticRankingSearch(Integer pagina, Integer tamanho, String pesquisa) throws RegraDeNegocioException {
+        return new ResponseEntity<>(documentacaoService.listByBM25RankingSearch(pagina, tamanho, pesquisa), HttpStatus.OK);
+    }
+
 }
